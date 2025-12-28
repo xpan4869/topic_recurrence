@@ -1,0 +1,12 @@
+Using GPU on midway3-0277.rcc.local
+HF cache dir: /scratch/midway3/xpan02/hf_cache
+Saved: /home/xpan02/CASNL/macs-40123-xpan4869/final_proj/data/convo_features_outdegree_enjoyable.csv
+Rows: 1655
+                               convo_id  ...  sex_pair
+0  0020a0c5-1658-4747-99c1-2839e736b481  ...        FM
+1  002d68da-7738-4177-89d9-d72ae803e0e4  ...        FM
+2  00411458-8275-4b92-a000-d52187f03604  ...        FM
+3  00ae2f18-9599-4df6-8e3a-6936c86b97f0  ...        FF
+4  00b410f7-8b5f-4404-8433-0fb8c4be8f62  ...        FM
+
+[5 rows x 7 columns]

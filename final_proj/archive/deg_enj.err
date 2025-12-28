@@ -1,0 +1,2 @@
+/home/xpan02/CASNL/macs-40123-xpan4869/final_proj/scripts/6_outdegree_merge_enjoy.py:169: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  .apply(lambda g: pd.Series({"sex_pair": sex_pair(g)}))
