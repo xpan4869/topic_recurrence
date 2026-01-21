@@ -1,6 +1,6 @@
-# 3_label_topics.py
+# 3_label_topics_llama.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
-# Last Edited: 2025/12/12
+# Last Edited: 2026/1/14
 
 # Random-sample chunks within each BERTopic topic and use an LLM to generate:
     # - short_label (2–5 words)

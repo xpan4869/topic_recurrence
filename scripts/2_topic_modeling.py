@@ -1,4 +1,4 @@
-# topic_modeling.py
+# 2_topic_modeling.py
 # Author: Yolanda Pan
 # Date: 2025/12/12
 # This script:
@@ -14,6 +14,7 @@ from ast import literal_eval
 import numpy as np
 import pandas as pd
 from bertopic import BERTopic
+from pathlib import Path
 
 from parquet_helper import read_parquet_any, write_parquet_any
 
@@ -71,14 +72,19 @@ def reindex_chunks_within_conversation(df: pd.DataFrame) -> pd.DataFrame:
 # ----------------------------- Main -----------------------------
 
 def main() -> None:
-    base = os.environ.get("CANDOR_BASE", "/project/macs40123/yolanda/candor_parquet")
-    in_path = f"{base}/backbiter_chunk_topics.parquet"
-    out_path = f"{base}/chunk_topic-num.parquet"
+    base = Path("/project/ycleong/datasets/CANDOR")
+    in_path = base / "backbiter_chunk_embed.parquet"
+    out_path = base / "chunk_topic-num.parquet"
+
+    # sanity
+    print("Reading:", in_path)
+    if not in_path.exists():
+        raise FileNotFoundError(f"Missing: {in_path}")
 
     # 1) Load chunk-level data
-    df = read_parquet_any(in_path)
+    df = read_parquet_any(str(in_path))
 
-    # 2) Preserve within-conversation ordering (not used in modeling)
+    # 2) Preserve within-conversation ordering
     df = reindex_chunks_within_conversation(df)
 
     # 3) Ensure embeddings are real arrays
@@ -98,7 +104,7 @@ def main() -> None:
         .sort_values(["conversation_id", "chunk_id"])
         .reset_index(drop=True)
     )
-    write_parquet_any(out_df, out_path)
+    write_parquet_any(out_df, str(out_path))
 
     print("Done. Saved:")
     print(f"  - {out_path}")

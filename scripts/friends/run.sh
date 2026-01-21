@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=2_topic_modeling
-#SBATCH --output=2_topic_modeling.out
-#SBATCH --error=2_topic_modeling.err
+#SBATCH --job-name=2_topic_modeling_friends
+#SBATCH --output=2_topic_modeling_friends.out
+#SBATCH --error=2_topic_modeling_friends.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1

@@ -1,5 +1,5 @@
 # Author: Yolanda Pan
-# Date: 12/11/2025
+# Date: 12/20/2025
 # About: Chunk CANDOR turn-level conversations into word-bounded chunks, 
 # embed each chunk with MPNet, and save both turn-level (with chunk_id)
 # and chunk-level (with embeddings) Parquet outputs.
@@ -259,7 +259,7 @@ def make_chunk_texts(df: pd.DataFrame) -> pd.DataFrame:
 # ============================================
 
 if __name__ == '__main__':
-    BASE = "/project/macs40123/yolanda/candor_parquet"
+    BASE = "/project/ycleong/datasets/CANDOR"
 
     # 1. Load conversation (turn-level)
     full_convo = read_parquet_any(f"{BASE}/transcript_backbiter.ALL.parquet")
@@ -283,13 +283,7 @@ if __name__ == '__main__':
         chunk_batch_size=8,
     )
 
-    # 5. Save turn-level with chunk_id
-    write_parquet_any(
-        full_convo,
-        f"{BASE}/backbiter_turns_with_chunkid.parquet",
-    )
-
-    # 6. Save chunk-level with embeddings
+    # 5. Save chunk-level with embeddings
     write_parquet_any(
         chunk_df,
         f"{BASE}/backbiter_chunk_embed.parquet",
@@ -297,7 +291,6 @@ if __name__ == '__main__':
     
 
     print("Done. Saved:")
-    print("  - backbiter_turns_with_chunkid.parquet")
     print("  - backbiter_chunk_embed.parquet      (with embeddings)")
 
  

@@ -1,6 +1,0 @@
-Using GPU on midway3-0279.rcc.local
-HF cache dir: /scratch/midway3/xpan02/hf_cache
-Done. Saved:
-  - /project/macs40123/yolanda/candor_parquet/topic_edges_by_convo.parquet
-  - /project/macs40123/yolanda/candor_parquet/topic_nodes_by_convo.parquet
-Edges rows: 18921 | Nodes rows: 14672
