@@ -1,12 +1,12 @@
 # 2_topic_modeling.py
 # Author: Yolanda Pan
-# Date: 2025/12/12
+# Date: 2026/2/16
 # This script:
-#   - Loads chunk-level texts and embeddings
+#   - Loads chunk-level texts and embeddings (MPNet from backbiter_chunk_embed.parquet)
 #   - Fits BERTopic using precomputed embeddings (static topic induction)
 #   - Preserves within-conversation chunk order for downstream analysis
 #   - Assigns a topic label to each chunk
-#   - Saves a lightweight chunk-level Parquet file for later sequence or transition-graph modeling
+#   - Saves chunk-level Parquet with chunk_id, conversation_id, chunk_text, topic, embedding
 
 import os
 from ast import literal_eval
@@ -98,9 +98,9 @@ def main() -> None:
     topics, _ = topic_model.fit_transform(docs, embeddings)
     df["topic"] = topics
 
-    # 5) Save lightweight chunk-level output
+    # 5) Save chunk-level output (include embedding column for downstream avg per topic)
     out_df = (
-        df[["chunk_id", "conversation_id", "chunk_text", "topic"]]
+        df[["chunk_id", "conversation_id", "chunk_text", "topic", "embedding"]]
         .sort_values(["conversation_id", "chunk_id"])
         .reset_index(drop=True)
     )

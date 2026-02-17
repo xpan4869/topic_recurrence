@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=2_topic_modeling
-#SBATCH --output=2_topic_modeling.out
-#SBATCH --error=2_topic_modeling.err
+#SBATCH --job-name=4_cluster_topics
+#SBATCH --output=4_cluster_topics.out
+#SBATCH --error=4_cluster_topics.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
@@ -16,14 +16,14 @@ module load python/anaconda-2023.09 cuda/11.7 gcc/10.2.0
 
 # Put HuggingFace & Torch cache to scratch (NOT $HOME)
 export HF_HOME=/scratch/midway3/${USER}/hf_cache
-export TRANSFORMERS_CACHE=$HF_HOME     # optional backward compatibility
-export TORCH_HOME=$HF_HOME             # also route torch weights there
+export TRANSFORMERS_CACHE=$HF_HOME
+export TORCH_HOME=$HF_HOME
 
-mkdir -p $HF_HOME
+# Slurm runs from job dir; use absolute path so we find the script and .env
+PROJECT_ROOT="/home/xpan02/topic_recurrence"
+SCRIPT_DIR="$PROJECT_ROOT/scripts"
+ENV_FILE="$PROJECT_ROOT/.env"
 
-# Good practice: echo environment to log
-echo "Using GPU on $(hostname)"
-echo "HF cache dir: $HF_HOME"
-
-# -------- Run Embedding Script --------
-python3 2_topic_modeling.py
+# -------- Run clustering script --------
+cd "$PROJECT_ROOT" || exit 1
+python3 "$SCRIPT_DIR/4_cluster_topics.py" # --env "$ENV_FILE"
