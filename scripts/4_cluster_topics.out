@@ -1,5 +1,0 @@
-Loading /home/xpan02/topic_recurrence/data/topic-label_llama_all.csv...
-Clustering 359 topics (topic_id -1 excluded).
-Optimal k (silhouette): 27 (score=0.075)
-Wrote 360 rows to /home/xpan02/topic_recurrence/data/topic_cluster_map.csv
-Cluster IDs: 0..26 (27 clusters); topic_id -1 -> cluster_id -1.

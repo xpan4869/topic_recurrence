@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
 # 5_label_clusters.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
 # Last Edited: 2026/2/17
 # Label clusters using LLM. Uses topic labels (short_label, summary, keywords) from
-# topic-label_llama_all.csv to generate cluster-level labels.
+# topic-label_all.csv to generate cluster-level labels.
 # Runs locally on Midway GPU (no paid API, no HF inference). Default model is non-gated.
-# Input: topic_cluster_map.csv (topic_id -> cluster_id) + topic-label_llama_all.csv (topic labels)
+# Input: topic_cluster_map.csv (topic_id -> cluster_id) + topic-label_all.csv (topic labels)
 # Output: cluster_labels.csv with cluster_id, cluster_label, cluster_summary, cluster_keywords
 
 import os
@@ -195,7 +194,7 @@ def parse_cluster_table(llm_output: str) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Label clusters using LLM based on topic labels from topic-label_llama_all.csv"
+        description="Label clusters using LLM based on topic labels from topic-label_all.csv"
     )
     parser.add_argument(
         "--cluster_map",
@@ -206,7 +205,7 @@ def main():
     parser.add_argument(
         "--topic_labels",
         type=Path,
-        default=Path("data/topic-label_llama_all.csv"),
+        default=Path("data/topic-label_all.csv"),
         help="Input CSV: topic_id, short_label, summary, keywords.",
     )
     parser.add_argument(

@@ -1,9 +1,9 @@
-# 6_outdegree_merge_enjoy.py
+# 7_outdegree_merge_enjoy.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
-# Last Edited: 2025/12/25
+# Last Edited: 2026/2/17
 """
 Conversation-level features:
-  - avg_out_degree + n_nodes from per-conversation topic transition edges
+  - avg_out_degree + n_nodes from per-conversation cluster transition edges (cluster_edges_by_convo.parquet)
   - avg_how_enjoyable from survey.ALL.parquet
   - conv_length_min from survey.ALL.parquet (min across the two participants)
   - sex_pair from survey.ALL.parquet (FF / MM / FM; unordered; UNK if missing)
@@ -11,20 +11,21 @@ Outputs a CSV under ./data/ next to this script.
 """
 
 import os
+import argparse
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 from parquet_helper import read_parquet_any
 
 
-def script_dir() -> str:
-    return os.path.dirname(os.path.abspath(__file__))
+CANDOR_DIR = Path("/project/ycleong/datasets/CANDOR")
+PROJECT_DATA = Path("/home/xpan02/topic_recurrence/data")
 
 
-def ensure_data_dir() -> str:
-    d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
-    d = os.path.abspath(d)
-    os.makedirs(d, exist_ok=True)
+def ensure_data_dir() -> Path:
+    d = PROJECT_DATA
+    d.mkdir(parents=True, exist_ok=True)
     return d
 
 
@@ -35,17 +36,17 @@ def compute_avg_outdegree_per_convo(edges: pd.DataFrame) -> pd.DataFrame:
     Outdegree definition:
       outdeg(node) = number of outgoing edges from node (unweighted)
       avg_out_degree(convo) = mean outdeg across ALL nodes in that convo,
-                              including nodes with 0 outdegree (e.g., last topic).
+                              including nodes with 0 outdegree (e.g., last cluster).
     """
-    # normalize convo column name
-    if "conversation_id" in edges.columns:
-        edges = edges.rename(columns={"conversation_id": "convo_id"}).copy()
-    elif "convo_id" in edges.columns:
-        edges = edges.copy()
-    else:
+    # normalize convo column name (use conversation_id consistently)
+    if "convo_id" in edges.columns and "conversation_id" not in edges.columns:
+        edges = edges.rename(columns={"convo_id": "conversation_id"}).copy()
+    elif "conversation_id" not in edges.columns:
         raise ValueError("Edges must contain 'conversation_id' or 'convo_id'.")
+    else:
+        edges = edges.copy()
 
-    required = {"convo_id", "source", "target"}
+    required = {"conversation_id", "source", "target"}
     missing = required - set(edges.columns)
     if missing:
         raise ValueError(f"Edges missing required columns: {missing}")
@@ -53,30 +54,31 @@ def compute_avg_outdegree_per_convo(edges: pd.DataFrame) -> pd.DataFrame:
     # All nodes per convo = union of source/target
     nodes = pd.concat(
         [
-            edges[["convo_id", "source"]].rename(columns={"source": "node"}),
-            edges[["convo_id", "target"]].rename(columns={"target": "node"}),
+            edges[["conversation_id", "source"]].rename(columns={"source": "node"}),
+            edges[["conversation_id", "target"]].rename(columns={"target": "node"}),
         ],
         ignore_index=True,
     ).drop_duplicates()
 
-    # Outdegree per (convo, node) from source counts
+    # Outdegree per (conversation_id, node) from source counts
     outdeg = (
-        edges.groupby(["convo_id", "source"])
+        edges.groupby(["conversation_id", "source"])
         .size()
         .reset_index(name="out_degree")
         .rename(columns={"source": "node"})
     )
 
     # Left-join so nodes with 0 outdegree appear
-    node_outdeg = nodes.merge(outdeg, on=["convo_id", "node"], how="left")
+    node_outdeg = nodes.merge(outdeg, on=["conversation_id", "node"], how="left")
     node_outdeg["out_degree"] = node_outdeg["out_degree"].fillna(0).astype(int)
 
     convo_feats = (
-        node_outdeg.groupby("convo_id", as_index=False)
+        node_outdeg.groupby("conversation_id", as_index=False)
         .agg(
             avg_out_degree=("out_degree", "mean"),
             n_nodes=("node", "nunique"),
         )
+        .rename(columns={"conversation_id": "convo_id"})  # Keep convo_id for merge with survey
     )
 
     return convo_feats
@@ -175,20 +177,37 @@ def compute_convo_survey_feats(surveys: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
-    # -------- paths (edit if needed) --------
-    INPUT_DATA_PATH = "/project/macs40123/yolanda/candor_parquet"
-    EDGES_PARQUET = os.path.join(INPUT_DATA_PATH, "topic_edges_by_convo.parquet")
-    SURVEY_PARQUET = os.path.join(INPUT_DATA_PATH, "survey.ALL.parquet")
-
-    # output under ./data next to this script
-    out_csv = os.path.join(ensure_data_dir(), "convo_features_outdegree_enjoyable.csv")
+    parser = argparse.ArgumentParser(description="Compute conversation features from cluster edges and survey data.")
+    parser.add_argument(
+        "--edges_parquet",
+        type=Path,
+        default=CANDOR_DIR / "cluster_edges_by_convo.parquet",
+        help="Edges parquet from 5_build_topic_network_cluster.py",
+    )
+    parser.add_argument(
+        "--survey_parquet",
+        type=Path,
+        default=CANDOR_DIR / "survey.ALL.parquet",
+        help="Survey parquet",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=PROJECT_DATA / "convo_features_outdegree_enjoyable.csv",
+        help="Output CSV path",
+    )
+    args = parser.parse_args()
 
     # -------- load edges & compute convo outdegree features --------
-    edges = read_parquet_any(EDGES_PARQUET)
+    if not args.edges_parquet.exists():
+        raise FileNotFoundError(f"Edges parquet not found: {args.edges_parquet}")
+    edges = read_parquet_any(str(args.edges_parquet))
     convo_outdeg = compute_avg_outdegree_per_convo(edges)
 
     # -------- load survey & compute convo-level survey feats --------
-    surveys = read_parquet_any(SURVEY_PARQUET)
+    if not args.survey_parquet.exists():
+        raise FileNotFoundError(f"Survey parquet not found: {args.survey_parquet}")
+    surveys = read_parquet_any(str(args.survey_parquet))
     convo_survey = compute_convo_survey_feats(surveys)
 
     # -------- merge --------
@@ -199,8 +218,9 @@ def main() -> None:
         .reset_index(drop=True)
     )
 
-    final.to_csv(out_csv, index=False)
-    print("Saved:", out_csv)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    final.to_csv(args.output, index=False)
+    print("Saved:", args.output)
     print("Rows:", len(final))
     print(final.head(5))
 

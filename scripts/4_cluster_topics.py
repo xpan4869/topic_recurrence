@@ -1,7 +1,7 @@
 # 4_cluster_topics.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
 # Last Edited: 2026/2/17
-# Cluster topics from topic-label_llama_all.csv using L2-normalized topic_embedding.
+# Cluster topics from topic-label_all.csv using L2-normalized topic_embedding.
 # Find best number of clusters (silhouette or Davies-Bouldin), apply AgglomerativeClustering,
 # and write topic_id -> cluster_id mapping to CSV.
 
@@ -37,7 +37,7 @@ def load_embeddings(csv_path: Path) -> tuple[pd.DataFrame, np.ndarray, np.ndarra
     if "topic_embedding" not in df.columns:
         raise ValueError(
             "topic_embedding column missing. Regenerate CSV with "
-            "scripts/3_label_bertopics_llama.py (and ensure chunk_topic-num.parquet has embedding from 2_topic_modeling.py)"
+            "scripts/3_label_bertopics.py (and ensure chunk_topic.parquet has embedding from 2_topic_modeling.py)"
         )
     # Keep all rows; only use rows with valid embedding for clustering
     df = df.copy()
@@ -87,12 +87,12 @@ def find_optimal_k(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Cluster topics from topic-label_llama_all.csv; output topic_id -> cluster_id map."
+        description="Cluster topics from topic-label_all.csv; output topic_id -> cluster_id map."
     )
     parser.add_argument(
         "--input",
         type=Path,
-        default=Path("data/topic-label_llama_all.csv"),
+        default=Path("data/topic-label_all.csv"),
         help="Input CSV with topic_id, topic_embedding (and optional short_label, etc.).",
     )
     parser.add_argument(

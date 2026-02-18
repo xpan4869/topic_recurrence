@@ -105,7 +105,7 @@ def main() -> None:
     base = Path("/project/ycleong/datasets/Friends")
 
     in_path = base / "friends_chunk_embed.parquet"
-    out_chunk_path = base / "friends_chunk_topic-num.parquet"
+    out_chunk_path = base / "friends_chunk_topic.parquet"
     out_topic_path = base / "friends_topics.parquet"
 
     if not in_path.exists():

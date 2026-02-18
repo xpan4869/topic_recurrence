@@ -1,6 +1,0 @@
-2026-02-16 12:02:11,048 - BERTopic - Dimensionality - Fitting the dimensionality reduction algorithm
-2026-02-16 12:03:02,083 - BERTopic - Dimensionality - Completed ✓
-2026-02-16 12:03:02,131 - BERTopic - Cluster - Start clustering the reduced embeddings
-2026-02-16 12:03:12,966 - BERTopic - Cluster - Completed ✓
-2026-02-16 12:03:12,980 - BERTopic - Representation - Fine-tuning topics using representation models.
-2026-02-16 12:03:16,993 - BERTopic - Representation - Completed ✓

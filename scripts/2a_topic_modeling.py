@@ -1,12 +1,13 @@
-# 2_topic_modeling.py
+# 2a_topic_modeling.py
 # Author: Yolanda Pan
-# Date: 2026/2/16
+# Date: 2026/2/17
 # This script:
 #   - Loads chunk-level texts and embeddings (MPNet from backbiter_chunk_embed.parquet)
 #   - Fits BERTopic using precomputed embeddings (static topic induction)
 #   - Preserves within-conversation chunk order for downstream analysis
 #   - Assigns a topic label to each chunk
 #   - Saves chunk-level Parquet with chunk_id, conversation_id, chunk_text, topic, embedding
+# Output: chunk_topic.parquet (same file updated by 2b_rate_depth.py with depth_score).
 
 import os
 from ast import literal_eval
@@ -74,7 +75,7 @@ def reindex_chunks_within_conversation(df: pd.DataFrame) -> pd.DataFrame:
 def main() -> None:
     base = Path("/project/ycleong/datasets/CANDOR")
     in_path = base / "backbiter_chunk_embed.parquet"
-    out_path = base / "chunk_topic-num.parquet"
+    out_path = base / "chunk_topic.parquet"
 
     # sanity
     print("Reading:", in_path)

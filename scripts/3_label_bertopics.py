@@ -1,13 +1,13 @@
-# 3_label_bertopics_llama.py
+# 3_label_bertopics.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
 # Last Edited: 2026/2/16
 
 # Random-sample chunks within each BERTopic topic and use an LLM to generate:
 #   short_label (2–5 words), one-sentence summary, keywords (3–8 comma-separated)
 # Runs locally on Midway GPU (no paid API, no HF inference). Default model is
-# non-gated so no HF token needed. Optional: --model_path to load from local dir (no HF at all).
-# Input: chunk_topic-num.parquet from 2_topic_modeling (topic, chunk_text, embedding = MPNet).
-# Output: topic-label_llama_all.csv with topic_id, short_label, summary, keywords, topic_embedding (avg MPNet).
+# Default model is non-gated so no HF token needed. Optional: --model_path to load from local dir (no HF at all).
+# Input: chunk_topic.parquet from 2_topic_modeling (topic, chunk_text, embedding = MPNet).
+# Output: topic-label_all.csv with topic_id, short_label, summary, keywords, topic_embedding (avg MPNet).
 
 import os
 import sys
@@ -109,10 +109,10 @@ def compute_topic_mean_embeddings(
     """
     Return a DataFrame with topic_id and one column topic_embedding (mean MPNet embedding per topic).
     Value is a string "[float, float, ...]" like the embedding column in chunk_embed.parquet.
-    Uses df's 'embedding' column if present (from chunk_topic-num.parquet), else merges with
+    Uses df's 'embedding' column if present (from chunk_topic.parquet), else merges with
     embedding_parquet on (conversation_id, chunk_id). Returns None if no embeddings available.
     """
-    # Prefer embedding in main df (chunk_topic-num.parquet from 2_topic_modeling)
+    # Prefer embedding in main df (chunk_topic.parquet from 2_topic_modeling)
     if "embedding" in df.columns:
         col = "embedding"
     elif embed_col in df.columns:
@@ -245,13 +245,13 @@ def main():
     parser.add_argument(
         "--in_parquet",
         type=str,
-        default="/project/ycleong/datasets/CANDOR/chunk_topic-num.parquet",
-        help="Path to chunk_topic-num.parquet",
+        default="/project/ycleong/datasets/CANDOR/chunk_topic.parquet",
+        help="Path to chunk_topic.parquet",
     )
     parser.add_argument(
         "--out_csv",
         type=str,
-        default="/home/xpan02/topic_recurrence/data/topic-label_llama_all.csv",
+        default="/home/xpan02/topic_recurrence/data/topic-label_all.csv",
         help="Output CSV path",
     )
     parser.add_argument(
@@ -400,8 +400,8 @@ def main():
         if len(examples) == 0:
             continue
 
-        llama_output = label_topic(int(t), examples, max_new_tokens=args.max_new_tokens)
-        row = parse_topic_table(llama_output)
+        model_output = label_topic(int(t), examples, max_new_tokens=args.max_new_tokens)
+        row = parse_topic_table(model_output)
         rows.append(row)
     
         print(f"Labeled topic {t}: {row['short_label']}")
