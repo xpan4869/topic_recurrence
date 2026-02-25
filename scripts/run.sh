@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=6_label_clusters.py
-#SBATCH --output=6_label_clusters.py.out
-#SBATCH --error=6_label_clusters.py.err
+#SBATCH --job-name=8_merge_outputs.py
+#SBATCH --output=8_merge_outputs.py.out
+#SBATCH --error=8_merge_outputs.py.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
@@ -26,4 +26,4 @@ ENV_FILE="$PROJECT_ROOT/.env"
 
 # -------- Run clustering script --------
 cd "$PROJECT_ROOT" || exit 1
-python3 "$SCRIPT_DIR/6_label_clusters.py" --env "$ENV_FILE"
+python3 "$SCRIPT_DIR/8_merge_outputs.py" #--env "$ENV_FILE"

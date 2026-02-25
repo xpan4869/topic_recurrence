@@ -1,9 +1,9 @@
 # 8_merge_outputs.py
 # Author: Yolanda Pan (xpan02@uchicago.edu)
-# Merge outputs from 7_build_topic_network_cluster.py and 4_rate_depth.py.
-# Input: cluster_edges_by_convo.parquet (from 7_build_topic_network_cluster.py)
-#        chunk_topic_depth.parquet (from 4_rate_depth.py)
-# Output: convo_features_outdegree_enjoyable.csv
+# Merge outputs from 7_build_topic_network_cluster.py and survey/transcript.
+# Input: cluster_edges_by_convo.parquet (from 7), survey.ALL.parquet (enjoyment, sex),
+#        transcript_backbiter.ALL.parquet (start/stop for conv_length: (last_stop - first_start)/60).
+# Output: convo_features_outdegree_enjoyable.csv (includes conv_length_min from transcript).
 
 import os
 import argparse
@@ -15,6 +15,7 @@ from parquet_helper import read_parquet_any
 
 
 CANDOR_DIR = Path("/project/ycleong/datasets/CANDOR")
+TRANSCRIPT_FILE = "transcript_backbiter.ALL.parquet"
 PROJECT_DATA = Path("/home/xpan02/topic_recurrence/data")
 
 
@@ -79,6 +80,23 @@ def compute_avg_outdegree_per_convo(edges: pd.DataFrame) -> pd.DataFrame:
     return convo_feats
 
 
+def compute_conv_length_from_transcript(transcript: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute conversation length in minutes from transcript: (last stop - first start) / 60 per conversation.
+    transcript must have: conversation_id, start, stop (times in seconds).
+    Returns DataFrame with convo_id, conv_length_min.
+    """
+    for col in ("conversation_id", "start", "stop"):
+        if col not in transcript.columns:
+            raise ValueError(f"Transcript must have columns conversation_id, start, stop; missing: {col}")
+    agg = (
+        transcript.groupby("conversation_id", as_index=False)
+        .agg(first_start=("start", "min"), last_stop=("stop", "max"))
+    )
+    agg["conv_length_min"] = ((agg["last_stop"] - agg["first_start"]) / 60.0).astype(np.float64)
+    return agg[["conversation_id", "conv_length_min"]].rename(columns={"conversation_id": "convo_id"})
+
+
 def _normalize_sex_to_fm(x):
     """Map sex to 'F'/'M'/NaN robustly across common encodings."""
     if pd.isna(x):
@@ -120,27 +138,25 @@ def compute_convo_survey_feats(surveys: pd.DataFrame) -> pd.DataFrame:
     """
     Build conversation-level survey aggregates:
       - avg_how_enjoyable: mean across both participants
-      - conv_length_min: min across both participants
       - sex_pair: FF/MM/FM (unordered); UNK if missing
+    conv_length_min is no longer from survey; use compute_conv_length_from_transcript() instead.
     """
-    needed = {"convo_id", "user_id", "how_enjoyable", "conv_length", "sex"}
+    if "conversation_id" in surveys.columns and "convo_id" not in surveys.columns:
+        surveys = surveys.rename(columns={"conversation_id": "convo_id"}).copy()
+    needed = {"convo_id", "user_id", "how_enjoyable", "sex"}
     missing = needed - set(surveys.columns)
     if missing:
         raise ValueError(f"Survey missing required columns: {missing}")
 
-    # one row per participant per convo (avoid duplicates if survey has repeats)
-    s = surveys[["convo_id", "user_id", "how_enjoyable", "conv_length", "sex"]].copy()
+    s = surveys[["convo_id", "user_id", "how_enjoyable", "sex"]].copy()
     s = s.drop_duplicates(subset=["convo_id", "user_id"])
 
-    # normalize sex
     s["sex_norm"] = s["sex"].apply(_normalize_sex_to_fm)
 
-    # enjoyment mean + conv_length min
     agg_basic = (
         s.groupby("convo_id", as_index=False)
         .agg(
             avg_how_enjoyable=("how_enjoyable", "mean"),
-            conv_length_min=("conv_length", "min"),
             n_participants=("user_id", "nunique"),
         )
     )
@@ -183,7 +199,13 @@ def main() -> None:
         "--survey_parquet",
         type=Path,
         default=CANDOR_DIR / "survey.ALL.parquet",
-        help="Survey parquet",
+        help="Survey parquet (how_enjoyable, sex; conv_length no longer used)",
+    )
+    parser.add_argument(
+        "--transcript_parquet",
+        type=Path,
+        default=CANDOR_DIR / TRANSCRIPT_FILE,
+        help="Transcript parquet for conv_length: (last stop - first start)/60 per conversation",
     )
     parser.add_argument(
         "--output",
@@ -199,16 +221,23 @@ def main() -> None:
     edges = read_parquet_any(str(args.edges_parquet))
     convo_outdeg = compute_avg_outdegree_per_convo(edges)
 
-    # -------- load survey & compute convo-level survey feats --------
+    # -------- load survey & compute convo-level survey feats (no conv_length) --------
     if not args.survey_parquet.exists():
         raise FileNotFoundError(f"Survey parquet not found: {args.survey_parquet}")
     surveys = read_parquet_any(str(args.survey_parquet))
     convo_survey = compute_convo_survey_feats(surveys)
 
+    # -------- conv_length from transcript: (last stop - first start) / 60 per convo --------
+    if not args.transcript_parquet.exists():
+        raise FileNotFoundError(f"Transcript parquet not found: {args.transcript_parquet}")
+    transcript = read_parquet_any(str(args.transcript_parquet))
+    conv_length_df = compute_conv_length_from_transcript(transcript)
+
     # -------- merge --------
     final = (
         convo_outdeg
         .merge(convo_survey, on="convo_id", how="left")
+        .merge(conv_length_df, on="convo_id", how="left")
         .sort_values("convo_id")
         .reset_index(drop=True)
     )
