@@ -10,7 +10,7 @@ The workflow builds **topic structure** from conversations, aggregates topics in
 - `scripts/`: End-to-end pipeline scripts (see below).
 - `data/`: Lightweight outputs and mappings saved by this repo (CSV).
   - `data/topic-label_all.csv`: topic labels generated from sampled chunks
-  - `data/topic_cluster_map.csv`: topic \(\rightarrow\) cluster mapping
+  - `data/topic_cluster_map.csv`: topic -> cluster mapping
   - `data/cluster_labels.csv`: cluster labels
   - `data/convo_features_outdegree_enjoyable.csv`: merged conversation-level feature table
 
